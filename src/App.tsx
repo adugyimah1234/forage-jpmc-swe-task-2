@@ -2,12 +2,15 @@ import React, { Component } from 'react';
 import DataStreamer, { ServerRespond } from './DataStreamer';
 import Graph from './Graph';
 import './App.css';
+import {ServerResponse} from "http";
+import {clearInterval} from "timers";
 
 /**
  * State declaration for <App />
  */
 interface IState {
   data: ServerRespond[],
+  showGraph: boolean,
 }
 
 /**
@@ -22,6 +25,7 @@ class App extends Component<{}, IState> {
       // data saves the server responds.
       // We use this state to parse data down to the child element (Graph) as element property
       data: [],
+      showGraph: false,
     };
   }
 
@@ -29,19 +33,34 @@ class App extends Component<{}, IState> {
    * Render Graph react component with state.data parse as property data
    */
   renderGraph() {
+    if(this.state.showGraph)
     return (<Graph data={this.state.data}/>)
   }
 
   /**
    * Get new data from server and update the state with the new data
    */
-  getDataFromServer() {
+ getDataFromServer() {
+  let a = 0;
+
+  const intervalTime = 1000; // Interval time in milliseconds (1 second)
+
+  const interval = setInterval(() => {
+    // Fetch data from the server
     DataStreamer.getData((serverResponds: ServerRespond[]) => {
-      // Update the state by creating a new array of data that consists of
-      // Previous data in the state and the new data from server
-      this.setState({ data: [...this.state.data, ...serverResponds] });
+      // Update the component's state with the new data and set showGraph to true
+      this.setState((prevState) => ({
+        data: [...prevState.data, ...serverResponds],
+        showGraph: true,
+      }));
     });
-  }
+
+    a++;
+    if (a > 1000) {
+      clearInterval(interval); // Clear the interval after 1000 iterations
+    }
+  }, intervalTime); // Set the interval with the specified time
+}
 
   /**
    * Render the App react component
